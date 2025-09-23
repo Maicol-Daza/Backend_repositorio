@@ -1,72 +1,58 @@
 const db = require('../config/conexion_db');
 
-class RolPermisoController{
-    // obtener todas las relaciones rol-permisos
-    async obtenerRolPermisos(req, res){
-        try{
-            const[rolPermisos] = await db.query(`
-                SELECT rp.id_rol_permiso, rp.id_rol, r.nombre AS rol,p.nombre AS permiso
-                FROM rol_permiso rp
-                JOIN roles r ON rp.id_rol
-                JOIN permisos p ON rp.permiso_id = p.id_permiso
-                `);
-                res.json(rolPermisos);
-        }catch (error){
-            res.status(500).json({ error : 'Error al obtener roles-permisos'});
-        }
+class PermisosController {
+  async obtenerPermisos(req, res) {
+    try {
+      const [permisos] = await db.query('SELECT * FROM permisos');
+      res.json(permisos);
+    } catch (error) {
+      res.status(500).json({ error: 'Error al obtener permisos' });
     }
-    async obtenerPermisosRol(req, res){
-        const{ idrol } = req.params;
-        try{
-            const [rolPermisos] = await db.query(`
-                SELECT
-                rp.id_rol_permiso,
-                rp.id_rol,
-                r.nombre AS rol,
-                p.id_permiso,
-                p.nombre AS permiso
-            FROM rol_permiso rp
-            JOIN roles r ON rp.id_rol = r.id_rol
-            JOIN permisos p ON rp.permiso_id= p. id_permiso
-            WHERE rp.id_rol =?`
-        ,[idrol]); //parametro
-        
-        res.json(rolPermisos); 
-        }catch (error){
-            console.error("Error en obtenerPermisosDeRol:",error);
-            res.status(500).json({ error : 'Error al obtener roles-permisos'});
-        }
-    }
+  }
 
-   
-    //obtener una relación por id
-    async obtenerRolPermisoPorId(req, res){
-        const { id } = req.params;
-        try {
-            const [rolPermiso] = await db.query(`
-                SELECT rp.id_rol_permiso, r.nombre AS rol, p.nombre AS permiso
-                FROM rol_permiso rp
-                JOIN roles r ON rp.id_rol = r.id_rol
-                JOIN permisos p ON rp.permiso_id = p.id_permiso
-                WHERE rp.id_rol_permiso = ?
-                `, [id]);
-                
-                if (rolPermiso.lenght === 0) {
-                    return res.status(404).json({ error: 'Relacion rol-permiso no encontrada'});
-                }
-                res.json(rolPermiso[0]);
-        } catch (error) {
-            res.status(500).json({error:'Error al obtener relación rol-permiso'});
-        }
+  async obtenerPermisoPorId(req, res) {
+    const { id } = req.params;
+    try {
+      const [permiso] = await db.query('SELECT * FROM permisos WHERE id_permiso = ?', [id]);
+      if (permiso.length === 0) {
+        return res.status(404).json({ error: 'Permiso no encontrado' });
+      }
+      res.json(permiso[0]);
+    } catch (error) {
+      res.status(500).json({ error: 'Error al obtener permiso' });
     }
+  }
 
-    // Asignar un permiso a un rol
-    async agregarRolPermiso(req, res){
-        const { id_rol,permiso_id } = req.body;
-        try{
-            await db.query(
-                'INSERT INTO rol_permiso SET id_rol = ?, permsiso_id'
-            )
-        }
+  async agregarPermiso(req, res) {
+    const { nombre, descripcion } = req.body;
+    try {
+      await db.query('INSERT INTO permisos (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
+      res.json({ mensaje: 'Permiso agregado correctamente' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al agregar permiso' });
     }
+  }
+
+  async actualizarPermiso(req, res) {
+    const { id } = req.params;
+    const { nombre, descripcion } = req.body;
+    try {
+      await db.query('UPDATE permisos SET nombre = ?, descripcion = ? WHERE id_permiso = ?', [nombre, descripcion, id]);
+      res.json({ mensaje: 'Permiso actualizado correctamente' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al actualizar permiso' });
+    }
+  }
+
+  async eliminarPermiso(req, res) {
+    const { id } = req.params;
+    try {
+      await db.query('DELETE FROM permisos WHERE id_permiso = ?', [id]);
+      res.json({ mensaje: 'Permiso eliminado correctamente' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al eliminar permiso' });
+    }
+  }
 }
+
+module.exports = PermisosController;
